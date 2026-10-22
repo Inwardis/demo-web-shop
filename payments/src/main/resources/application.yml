@@ -1,0 +1,14 @@
+server:
+  port: 8102
+spring:
+  application:
+    name: payments
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5439/webshop}
+    username: ${DATABASE_USER:webshop}
+    password: ${DATABASE_PASSWORD:webshop}
+stripe:
+  # Test-mode keys only in development. Production keys live in the Payments host's secret store
+  # and nowhere else (ADR-003).
+  secret-key: ${STRIPE_SECRET_KEY:sk_test_replace_me}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_replace_me}

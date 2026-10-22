@@ -1,3 +1,8 @@
-target/
+build/
+.gradle/
+node_modules/
+.next/
 .idea/
 *.iml
+.env
+*.tsbuildinfo

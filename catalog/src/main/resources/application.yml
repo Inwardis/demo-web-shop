@@ -1,0 +1,13 @@
+server:
+  port: 8101
+spring:
+  application:
+    name: catalog
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5439/webshop}
+    username: ${DATABASE_USER:webshop}
+    password: ${DATABASE_PASSWORD:webshop}
+  cache:
+    cache-names: products,product
+    caffeine:
+      spec: expireAfterWrite=60s,maximumSize=1000

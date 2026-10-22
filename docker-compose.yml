@@ -1,0 +1,52 @@
+# The whole shop on one machine: the Orders DB, Catalog, Payments and Checkout.
+# Stripe stays external — set the test-mode keys in .env (see README).
+services:
+  orders-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: webshop
+      POSTGRES_USER: webshop
+      POSTGRES_PASSWORD: webshop
+    ports: ["5439:5432"]
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+      - orders-db:/var/lib/postgresql/data
+
+  catalog:
+    image: eclipse-temurin:21-jre
+    command: java -jar /app/catalog.jar
+    volumes: ["./catalog/build/libs/catalog-1.4.0.jar:/app/catalog.jar:ro"]
+    environment:
+      DATABASE_URL: jdbc:postgresql://orders-db:5432/webshop
+    ports: ["8101:8101"]
+    depends_on: [orders-db]
+
+  payments:
+    image: eclipse-temurin:21-jre
+    command: java -jar /app/payments.jar
+    volumes: ["./payments/build/libs/payments-0.7.0.jar:/app/payments.jar:ro"]
+    environment:
+      DATABASE_URL: jdbc:postgresql://orders-db:5432/webshop
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_replace_me}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_replace_me}
+    ports: ["8102:8102"]
+    depends_on: [orders-db]
+
+  checkout:
+    image: node:22
+    working_dir: /app
+    command: node .next/standalone/server.js
+    volumes: ["./checkout:/app:ro"]
+    environment:
+      CATALOG_URL: http://catalog:8101
+      PAYMENTS_URL: http://payments:8102
+      DATABASE_URL: postgres://webshop:webshop@orders-db:5432/webshop
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-pk_test_replace_me}
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    ports: ["3000:3000"]
+    depends_on: [catalog, payments]
+
+volumes:
+  orders-db:
